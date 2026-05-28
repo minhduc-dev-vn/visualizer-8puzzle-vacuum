@@ -48,7 +48,7 @@ class AIVisualizerApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
 
-        self.title("AI Agent Visualizer - BFS/DFS")
+        self.title("AI Agent Visualizer - Search Algorithms")
         self.geometry("1360x820")
         self.minsize(1250, 760)
         self.configure(bg=self.COLORS["bg"])
@@ -249,7 +249,7 @@ class AIVisualizerApp(tk.Tk):
         self.algorithm_combo = ttk.Combobox(
             parent,
             textvariable=self.algorithm_var,
-            values=["BFS1", "BFS2", "DFS1", "DFS2"],
+            values=["BFS1", "BFS2", "DFS1", "DFS2", "IDS", "UCS", "ASTAR", "GREEDY"],
             state="readonly",
             width=14,
             font=("Consolas", 11, "bold"),
@@ -266,7 +266,7 @@ class AIVisualizerApp(tk.Tk):
         )
         self.max_entry.pack(fill=tk.X, pady=(0, 12))
 
-        ttk.Label(parent, text="DFS max depth", style="Panel.TLabel").pack(anchor=tk.W, pady=(0, 8))
+        ttk.Label(parent, text="DFS/IDS max depth", style="Panel.TLabel").pack(anchor=tk.W, pady=(0, 8))
 
         self.max_depth_entry = ttk.Entry(
             parent,
@@ -313,11 +313,11 @@ class AIVisualizerApp(tk.Tk):
             "W/A/S/D: move\n"
             "Space: suck\n"
             "Mouse: click cell\n\n"
-            "BFS1/DFS1:\n"
+            "BFS1/DFS1/IDS/UCS/ASTAR/GREEDY:\n"
             "check goal when popped\n\n"
             "BFS2/DFS2:\n"
             "check goal when generated\n\n"
-            "DFS uses depth limit\n"
+            "DFS + IDS use depth limit\n"
             "to avoid 8-puzzle runaway."
         )
 
@@ -336,7 +336,7 @@ class AIVisualizerApp(tk.Tk):
 
         self.description_label = ttk.Label(
             parent,
-            text="Play with mouse, or click APPLY to watch BFS/DFS solve it.",
+            text="Play with mouse, or click APPLY to watch the selected algorithm solve it.",
             style="Muted.TLabel",
         )
         self.description_label.pack(anchor=tk.W, pady=(0, 18))
@@ -481,7 +481,7 @@ class AIVisualizerApp(tk.Tk):
         if self.mode_var.get() == "8-PUZZLE":
             self.title_label.configure(text="8-Puzzle")
             self.description_label.configure(
-                text="Play with mouse, or click APPLY to watch BFS/DFS solve it."
+                text="Play with mouse, or click APPLY to watch the selected algorithm solve it."
             )
             self.draw_puzzle()
         else:
@@ -977,7 +977,7 @@ class AIVisualizerApp(tk.Tk):
         except ValueError:
             value = 12
 
-        # Depth quá lớn làm DFS 8-Puzzle tăng rất nhanh.
+        # Depth quá lớn làm DFS/IDS 8-Puzzle tăng rất nhanh.
         # Giữ giới hạn hợp lý để tránh treo GUI/máy.
         return max(1, min(value, 40))
 
