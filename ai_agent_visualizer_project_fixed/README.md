@@ -1,84 +1,83 @@
-# AI Agent Visualizer
+﻿# AI Agent Visualizer
 
-Python Tkinter GUI dùng để mô phỏng BFS/DFS cho:
+Tkinter app de mo phong cac thuat toan tim kiem cho:
 
 - 8-Puzzle
-- Vacuum World
+- Vacuum World (3x3)
 
-## Cấu trúc file
+## Thuat toan ho tro
+
+- `BFS1`: check goal khi node duoc pop khoi frontier.
+- `BFS2`: check goal ngay khi sinh node con.
+- `DFS1`: DFS co depth limit, check goal khi pop.
+- `DFS2`: DFS co depth limit, check goal khi sinh con.
+- `IDS`: Iterative Deepening Search (depth limit tang dan).
+- `UCS`: Uniform-Cost Search.
+- `ASTAR`: A* Search.
+- `GREEDY`: Greedy Best-First Search.
+
+## Cau truc chinh
 
 ```text
-ai_agent_visualizer_project/
-├── main.py
-├── algorithms/
-│   ├── __init__.py
-│   ├── common.py
-│   ├── bfs1.py
-│   ├── bfs2.py
-│   ├── dfs1.py
-│   └── dfs2.py
-├── problems/
-│   ├── __init__.py
-│   ├── puzzle.py
-│   └── vacuum.py
-└── ui/
-    ├── __init__.py
-    └── app.py
+ai_agent_visualizer_project_fixed/
+|-- main.py
+|-- algorithms/
+|   |-- __init__.py
+|   |-- common.py
+|   |-- bfs1.py
+|   |-- bfs2.py
+|   |-- dfs1.py
+|   |-- dfs2.py
+|   |-- ids.py
+|   |-- ucs.py
+|   |-- astar.py
+|   `-- greedy.py
+|-- problems/
+|   |-- __init__.py
+|   |-- puzzle.py
+|   `-- vacuum.py
+`-- ui/
+    |-- __init__.py
+    `-- app.py
 ```
 
-## Chạy chương trình
+## Cach chay
+
+Tu thu muc goc repo:
 
 ```bash
+cd ai_agent_visualizer_project_fixed
 python main.py
 ```
 
-Nếu đang ở ngoài thư mục project:
+Neu dang dung nhieu ban Python:
 
 ```bash
-cd ai_agent_visualizer_project
-python main.py
+py -3.13 main.py
 ```
 
-## Ý nghĩa thuật toán
+## Search Trace tren UI
 
-### BFS1 / DFS1
+Bang trace hien thi day du:
 
-Kiểm tra goal khi node được lấy ra khỏi Frontier.
+- `Step`
+- `Action`
+- `Current Node`
+- `Frontier - FULL`
+- `Reached - FULL`
+- `Note`
 
-### BFS2 / DFS2
+UI co thanh cuon ngang/doc va o `Selected trace detail` de xem noi dung dai.
 
-Kiểm tra goal ngay khi node con được sinh ra.
+## Dieu khien thu cong
 
-## Bảng Search Trace
+- `W/A/S/D`: di chuyen.
+- `Space`: `SUCK` (che do Vacuum).
+- Click chuot vao o tren board.
 
-Bảng có đầy đủ:
+## Ghi chu ve gioi han
 
-- Step
-- Action
-- Current Node
-- Frontier full
-- Reached full
-- Note
+- `Max expansions`: gioi han so lan mo rong de tranh treo may.
+- `DFS/IDS max depth`: gioi han do sau cho `DFS1`, `DFS2`, `IDS`.
 
-Không cắt ngắn nội dung Frontier/Reaching. Có thanh cuộn ngang và khung `Selected trace detail` để xem toàn bộ nội dung của dòng đang chọn.
-
-## Điều khiển thủ công
-
-- W: Up
-- A: Left
-- S: Down
-- D: Right
-- Space: Suck trong Vacuum
-- Click chuột vào ô trên board
-
-
-## Fix DFS 8-Puzzle
-
-DFS trong 8-Puzzle có thể đi rất sâu vì không gian trạng thái có chu trình.
-Bản này thêm `DFS max depth`, mặc định là `12`, để tránh DFS chạy quá lâu hoặc làm giao diện bị đơ.
-
-Nếu muốn thử bài khó hơn, có thể tăng:
-- `Max expansions`
-- `DFS max depth`
-
-Nhưng không nên tăng quá cao vì DFS không đảm bảo tìm lời giải ngắn nhất và có thể mở rộng rất nhiều node.
+Tang qua cao 2 gia tri tren co the lam thuat toan chay rat lau.
