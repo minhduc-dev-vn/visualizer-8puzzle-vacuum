@@ -249,9 +249,22 @@ class AIVisualizerApp(tk.Tk):
         self.algorithm_combo = ttk.Combobox(
             parent,
             textvariable=self.algorithm_var,
-            values=["BFS1", "BFS2", "DFS1", "DFS2", "IDS", "UCS", "ASTAR", "GREEDY"],
+            values=[
+                "BFS1",
+                "BFS2",
+                "DFS1",
+                "DFS2",
+                "IDS",
+                "IDA*",
+                "UCS",
+                "ASTAR",
+                "GREEDY",
+                "SIMPLE HC",
+                "STEEPEST HC",
+                "STOCHASTIC HC",
+            ],
             state="readonly",
-            width=14,
+            width=16,
             font=("Consolas", 11, "bold"),
         )
         self.algorithm_combo.pack(fill=tk.X, pady=(0, 18))
@@ -266,7 +279,7 @@ class AIVisualizerApp(tk.Tk):
         )
         self.max_entry.pack(fill=tk.X, pady=(0, 12))
 
-        ttk.Label(parent, text="DFS/IDS max depth", style="Panel.TLabel").pack(anchor=tk.W, pady=(0, 8))
+        ttk.Label(parent, text="DFS/IDS/IDA* max depth", style="Panel.TLabel").pack(anchor=tk.W, pady=(0, 8))
 
         self.max_depth_entry = ttk.Entry(
             parent,
@@ -313,11 +326,13 @@ class AIVisualizerApp(tk.Tk):
             "W/A/S/D: move\n"
             "Space: suck\n"
             "Mouse: click cell\n\n"
-            "BFS1/DFS1/IDS/UCS/ASTAR/GREEDY:\n"
+            "BFS1/DFS1/IDS/IDA*/UCS/ASTAR/GREEDY:\n"
             "check goal when popped\n\n"
             "BFS2/DFS2:\n"
             "check goal when generated\n\n"
-            "DFS + IDS use depth limit\n"
+            "SIMPLE/STEEPEST/STOCHASTIC HC:\n"
+            "local search, can stop at local optimum\n\n"
+            "DFS + IDS + IDA* use depth limit\n"
             "to avoid 8-puzzle runaway."
         )
 
@@ -977,7 +992,7 @@ class AIVisualizerApp(tk.Tk):
         except ValueError:
             value = 12
 
-        # Depth quá lớn làm DFS/IDS 8-Puzzle tăng rất nhanh.
+        # Depth quá lớn làm DFS/IDS/IDA* 8-Puzzle tăng rất nhanh.
         # Giữ giới hạn hợp lý để tránh treo GUI/máy.
         return max(1, min(value, 40))
 

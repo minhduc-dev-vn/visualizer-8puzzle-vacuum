@@ -12,9 +12,13 @@ Tkinter app de mo phong cac thuat toan tim kiem cho:
 - `DFS1`: DFS co depth limit, check goal khi pop.
 - `DFS2`: DFS co depth limit, check goal khi sinh con.
 - `IDS`: Iterative Deepening Search (depth limit tang dan).
+- `IDA*`: Iterative Deepening A*.
 - `UCS`: Uniform-Cost Search.
 - `ASTAR`: A* Search.
 - `GREEDY`: Greedy Best-First Search.
+- `SIMPLE HC`: Simple Hill Climbing.
+- `STEEPEST HC`: Steepest Ascent Hill Climbing.
+- `STOCHASTIC HC`: Stochastic Hill Climbing.
 
 ## Cau truc chinh
 
@@ -29,9 +33,11 @@ ai_agent_visualizer_project_fixed/
 |   |-- dfs1.py
 |   |-- dfs2.py
 |   |-- ids.py
+|   |-- ida_star.py
 |   |-- ucs.py
 |   |-- astar.py
-|   `-- greedy.py
+|   |-- greedy.py
+|   `-- hill_climbing.py
 |-- problems/
 |   |-- __init__.py
 |   |-- puzzle.py
@@ -78,6 +84,6 @@ UI co thanh cuon ngang/doc va o `Selected trace detail` de xem noi dung dai.
 ## Ghi chu ve gioi han
 
 - `Max expansions`: gioi han so lan mo rong de tranh treo may.
-- `DFS/IDS max depth`: gioi han do sau cho `DFS1`, `DFS2`, `IDS`.
+- `DFS/IDS/IDA* max depth`: gioi han do sau cho `DFS1`, `DFS2`, `IDS`, `IDA*`.
 
 Tang qua cao 2 gia tri tren co the lam thuat toan chay rat lau.
