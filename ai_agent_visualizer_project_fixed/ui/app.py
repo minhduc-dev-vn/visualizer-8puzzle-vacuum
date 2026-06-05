@@ -264,6 +264,7 @@ class AIVisualizerApp(tk.Tk):
                 "STOCHASTIC HC",
                 "RANDOM RESTART HC",
                 "LOCAL BEAM",
+                "SIMULATED ANNEALING",
             ],
             state="readonly",
             width=16,
@@ -338,6 +339,8 @@ class AIVisualizerApp(tk.Tk):
             "parameter = restart count\n\n"
             "LOCAL BEAM:\n"
             "parameter = k beam width\n\n"
+            "SIMULATED ANNEALING:\n"
+            "parameter = initial temperature T0\n\n"
             "DFS + IDS + IDA* use depth limit\n"
             "to avoid 8-puzzle runaway."
         )
@@ -1000,6 +1003,7 @@ class AIVisualizerApp(tk.Tk):
 
         # DFS/IDS/IDA* dùng giá trị này như depth limit.
         # Random Restart HC dùng như số restart; Local Beam dùng như k.
+        # Simulated Annealing uses this value as initial temperature T0.
         return max(1, min(value, 40))
 
     def shuffle_current_problem(self) -> None:
