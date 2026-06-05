@@ -256,6 +256,363 @@ def _hill_climbing(
     )
 
 
+def _random_walk_node(
+    *,
+    start_node: SearchNode,
+    get_successors: Callable[[object], Iterable[Tuple[str, object]]],
+    rng: random.Random,
+    steps: int,
+) -> SearchNode:
+    current = start_node
+    path_states = {start_node.state}
+
+    for _ in range(steps):
+        successors = list(get_successors(current.state))
+        if not successors:
+            break
+
+        fresh_successors = [
+            (action, child_state)
+            for action, child_state in successors
+            if child_state not in path_states
+        ]
+        action, child_state = rng.choice(fresh_successors or successors)
+        current = SearchNode(
+            state=child_state,
+            parent=current,
+            action=action,
+            depth=current.depth + 1,
+        )
+        path_states.add(child_state)
+
+    return current
+
+
+def search_random_restart(
+    *,
+    start_state: object,
+    is_goal: Callable[[object], bool],
+    get_successors: Callable[[object], Iterable[Tuple[str, object]]],
+    formatter: StateFormatter,
+    max_expansions: int,
+    max_depth: int | None = None,
+) -> SearchResult:
+    restart_count = max(1, max_depth or 12)
+    root = SearchNode(start_state, parent=None, action="START", depth=0)
+    rng = random.Random()
+
+    reached_set = {start_state}
+    reached_order = [start_state]
+
+    trace: List[TraceEntry] = []
+    trace_by_state = {}
+    expansions = 0
+
+    best_node = root
+    best_score = _local_score(start_state)
+
+    for restart_index in range(restart_count):
+        if expansions >= max_expansions:
+            break
+
+        if restart_index == 0:
+            current = root
+        else:
+            walk_steps = min(10, 2 + restart_index)
+            current = _random_walk_node(
+                start_node=root,
+                get_successors=get_successors,
+                rng=rng,
+                steps=walk_steps,
+            )
+            for node in current.path():
+                if node.state not in reached_set:
+                    reached_set.add(node.state)
+                    reached_order.append(node.state)
+
+        current_score = _local_score(current.state)
+        if current_score < best_score:
+            best_node = current
+            best_score = current_score
+
+        append_trace(
+            trace=trace,
+            trace_by_state=trace_by_state,
+            node=current,
+            frontier=[current],
+            reached_order=reached_order,
+            formatter=formatter,
+            note=(
+                f"Random Restart HC: start restart {restart_index + 1}/{restart_count}, "
+                f"score={current_score}"
+            ),
+        )
+
+        if is_goal(current.state):
+            path = current.path()
+            return SearchResult(
+                True,
+                path,
+                trace,
+                _align_trace_with_path(path, trace, trace_by_state),
+                f"Goal found by Random Restart Hill Climbing at restart {restart_index + 1}.",
+                expansions,
+            )
+
+        while expansions < max_expansions:
+            expansions += 1
+            successors = list(get_successors(current.state))
+            candidates: List[NeighborCandidate] = []
+
+            for action, child_state in successors:
+                child = SearchNode(
+                    state=child_state,
+                    parent=current,
+                    action=action,
+                    depth=current.depth + 1,
+                )
+                candidate = NeighborCandidate(node=child, score=_local_score(child_state))
+                candidates.append(candidate)
+
+                if child_state not in reached_set:
+                    reached_set.add(child_state)
+                    reached_order.append(child_state)
+
+            chosen = _pick_candidate(
+                strategy="steepest",
+                candidates=candidates,
+                current_score=current_score,
+                rng=rng,
+            )
+
+            if chosen is None:
+                append_trace(
+                    trace=trace,
+                    trace_by_state=trace_by_state,
+                    node=current,
+                    frontier=[candidate.node for candidate in candidates],
+                    reached_order=reached_order,
+                    formatter=formatter,
+                    note=(
+                        f"Restart {restart_index + 1} stuck at local optimum/plateau, "
+                        f"score={current_score}; moving to next restart"
+                    ),
+                )
+                break
+
+            append_trace(
+                trace=trace,
+                trace_by_state=trace_by_state,
+                node=current,
+                frontier=[candidate.node for candidate in candidates],
+                reached_order=reached_order,
+                formatter=formatter,
+                note=(
+                    f"Random Restart HC restart {restart_index + 1}: chose {chosen.node.action} "
+                    f"(score {current_score} -> {chosen.score})"
+                ),
+            )
+
+            current = chosen.node
+            current_score = chosen.score
+
+            if current_score < best_score:
+                best_node = current
+                best_score = current_score
+
+            if is_goal(current.state):
+                append_trace(
+                    trace=trace,
+                    trace_by_state=trace_by_state,
+                    node=current,
+                    frontier=[],
+                    reached_order=reached_order,
+                    formatter=formatter,
+                    note=(
+                        f"GOAL reached by Random Restart HC at restart {restart_index + 1}, "
+                        f"score={current_score}"
+                    ),
+                )
+                path = current.path()
+                return SearchResult(
+                    True,
+                    path,
+                    trace,
+                    _align_trace_with_path(path, trace, trace_by_state),
+                    f"Goal found by Random Restart Hill Climbing at restart {restart_index + 1}.",
+                    expansions,
+                )
+
+    return SearchResult(
+        False,
+        best_node.path(),
+        trace,
+        _align_trace_with_path(best_node.path(), trace, trace_by_state),
+        (
+            f"Random Restart Hill Climbing failed after {restart_count} restarts "
+            f"or max_expansions={max_expansions}; best score={best_score}."
+        ),
+        expansions,
+    )
+
+
+def search_local_beam(
+    *,
+    start_state: object,
+    is_goal: Callable[[object], bool],
+    get_successors: Callable[[object], Iterable[Tuple[str, object]]],
+    formatter: StateFormatter,
+    max_expansions: int,
+    max_depth: int | None = None,
+) -> SearchResult:
+    beam_width = max(1, min(max_depth or 3, 20))
+    root = SearchNode(start_state, parent=None, action="START", depth=0)
+    rng = random.Random()
+
+    current_nodes = [root]
+    seen_initial_states = {start_state}
+
+    for index in range(1, beam_width):
+        random_node = _random_walk_node(
+            start_node=root,
+            get_successors=get_successors,
+            rng=rng,
+            steps=min(10, index + 1),
+        )
+        if random_node.state in seen_initial_states:
+            continue
+        seen_initial_states.add(random_node.state)
+        current_nodes.append(random_node)
+
+    reached_set = set()
+    reached_order: List[object] = []
+    for node in current_nodes:
+        for path_node in node.path():
+            if path_node.state not in reached_set:
+                reached_set.add(path_node.state)
+                reached_order.append(path_node.state)
+
+    trace: List[TraceEntry] = []
+    trace_by_state = {}
+    expansions = 0
+
+    for node in current_nodes:
+        if is_goal(node.state):
+            append_trace(
+                trace=trace,
+                trace_by_state=trace_by_state,
+                node=node,
+                frontier=current_nodes,
+                reached_order=reached_order,
+                formatter=formatter,
+                note=f"GOAL found in initial Local Beam set (k={beam_width})",
+            )
+            path = node.path()
+            return SearchResult(
+                True,
+                path,
+                trace,
+                _align_trace_with_path(path, trace, trace_by_state),
+                "Goal found by Local Beam Search in initial beam.",
+                expansions,
+            )
+
+    while current_nodes and expansions < max_expansions:
+        neighbor_by_state = {}
+
+        for node in current_nodes:
+            if expansions >= max_expansions:
+                break
+
+            expansions += 1
+            local_candidates: List[NeighborCandidate] = []
+
+            for action, child_state in get_successors(node.state):
+                child = SearchNode(
+                    state=child_state,
+                    parent=node,
+                    action=action,
+                    depth=node.depth + 1,
+                )
+                candidate = NeighborCandidate(node=child, score=_local_score(child_state))
+                local_candidates.append(candidate)
+
+                existing = neighbor_by_state.get(child_state)
+                if existing is None or candidate.score < existing.score:
+                    neighbor_by_state[child_state] = candidate
+
+                if child_state not in reached_set:
+                    reached_set.add(child_state)
+                    reached_order.append(child_state)
+
+                if is_goal(child_state):
+                    append_trace(
+                        trace=trace,
+                        trace_by_state=trace_by_state,
+                        node=child,
+                        frontier=[candidate.node for candidate in local_candidates],
+                        reached_order=reached_order,
+                        formatter=formatter,
+                        note=f"GOAL generated by Local Beam Search (k={beam_width})",
+                    )
+                    path = child.path()
+                    return SearchResult(
+                        True,
+                        path,
+                        trace,
+                        _align_trace_with_path(path, trace, trace_by_state),
+                        "Goal found by Local Beam Search.",
+                        expansions,
+                    )
+
+            append_trace(
+                trace=trace,
+                trace_by_state=trace_by_state,
+                node=node,
+                frontier=[candidate.node for candidate in local_candidates],
+                reached_order=reached_order,
+                formatter=formatter,
+                note=(
+                    f"Local Beam Search(k={beam_width}): generated "
+                    f"{len(local_candidates)} neighbors from this beam state"
+                ),
+            )
+
+        candidates = sorted(neighbor_by_state.values(), key=lambda candidate: candidate.score)
+        if not candidates:
+            break
+
+        next_nodes = [candidate.node for candidate in candidates[:beam_width]]
+        best_score = candidates[0].score
+
+        append_trace(
+            trace=trace,
+            trace_by_state=trace_by_state,
+            node=next_nodes[0],
+            frontier=next_nodes,
+            reached_order=reached_order,
+            formatter=formatter,
+            note=(
+                f"Local Beam Search(k={beam_width}): selected best {len(next_nodes)} "
+                f"states for next beam, best score={best_score}"
+            ),
+        )
+
+        current_nodes = next_nodes
+
+    best_node = min(current_nodes, key=lambda node: _local_score(node.state)) if current_nodes else root
+    best_score = _local_score(best_node.state)
+
+    return SearchResult(
+        False,
+        best_node.path(),
+        trace,
+        _align_trace_with_path(best_node.path(), trace, trace_by_state),
+        f"Local Beam Search(k={beam_width}) reached max_expansions={max_expansions}; best score={best_score}.",
+        expansions,
+    )
+
+
 def search_simple(
     *,
     start_state: object,
@@ -317,4 +674,3 @@ def search_stochastic(
         formatter=formatter,
         max_expansions=max_expansions,
     )
-

@@ -262,6 +262,8 @@ class AIVisualizerApp(tk.Tk):
                 "SIMPLE HC",
                 "STEEPEST HC",
                 "STOCHASTIC HC",
+                "RANDOM RESTART HC",
+                "LOCAL BEAM",
             ],
             state="readonly",
             width=16,
@@ -279,7 +281,7 @@ class AIVisualizerApp(tk.Tk):
         )
         self.max_entry.pack(fill=tk.X, pady=(0, 12))
 
-        ttk.Label(parent, text="DFS/IDS/IDA* max depth", style="Panel.TLabel").pack(anchor=tk.W, pady=(0, 8))
+        ttk.Label(parent, text="Depth / HC parameter", style="Panel.TLabel").pack(anchor=tk.W, pady=(0, 8))
 
         self.max_depth_entry = ttk.Entry(
             parent,
@@ -332,6 +334,10 @@ class AIVisualizerApp(tk.Tk):
             "check goal when generated\n\n"
             "SIMPLE/STEEPEST/STOCHASTIC HC:\n"
             "local search, can stop at local optimum\n\n"
+            "RANDOM RESTART HC:\n"
+            "parameter = restart count\n\n"
+            "LOCAL BEAM:\n"
+            "parameter = k beam width\n\n"
             "DFS + IDS + IDA* use depth limit\n"
             "to avoid 8-puzzle runaway."
         )
@@ -992,8 +998,8 @@ class AIVisualizerApp(tk.Tk):
         except ValueError:
             value = 12
 
-        # Depth quá lớn làm DFS/IDS/IDA* 8-Puzzle tăng rất nhanh.
-        # Giữ giới hạn hợp lý để tránh treo GUI/máy.
+        # DFS/IDS/IDA* dùng giá trị này như depth limit.
+        # Random Restart HC dùng như số restart; Local Beam dùng như k.
         return max(1, min(value, 40))
 
     def shuffle_current_problem(self) -> None:

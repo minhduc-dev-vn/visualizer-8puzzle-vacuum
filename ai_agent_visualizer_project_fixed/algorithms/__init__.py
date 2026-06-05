@@ -10,6 +10,8 @@ from algorithms.greedy import search as greedy
 from algorithms.hill_climbing import search_simple as simple_hill_climbing
 from algorithms.hill_climbing import search_steepest as steepest_hill_climbing
 from algorithms.hill_climbing import search_stochastic as stochastic_hill_climbing
+from algorithms.hill_climbing import search_random_restart as random_restart_hill_climbing
+from algorithms.hill_climbing import search_local_beam as local_beam_search
 
 ALGORITHMS = {
     "BFS1": bfs1,
@@ -24,4 +26,6 @@ ALGORITHMS = {
     "SIMPLE HC": simple_hill_climbing,
     "STEEPEST HC": steepest_hill_climbing,
     "STOCHASTIC HC": stochastic_hill_climbing,
+    "RANDOM RESTART HC": random_restart_hill_climbing,
+    "LOCAL BEAM": local_beam_search,
 }

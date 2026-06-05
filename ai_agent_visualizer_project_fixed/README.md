@@ -19,6 +19,8 @@ Tkinter app de mo phong cac thuat toan tim kiem cho:
 - `SIMPLE HC`: Simple Hill Climbing.
 - `STEEPEST HC`: Steepest Ascent Hill Climbing.
 - `STOCHASTIC HC`: Stochastic Hill Climbing.
+- `RANDOM RESTART HC`: Random Restart Hill Climbing.
+- `LOCAL BEAM`: Local Beam Search.
 
 ## Cau truc chinh
 
@@ -84,6 +86,6 @@ UI co thanh cuon ngang/doc va o `Selected trace detail` de xem noi dung dai.
 ## Ghi chu ve gioi han
 
 - `Max expansions`: gioi han so lan mo rong de tranh treo may.
-- `DFS/IDS/IDA* max depth`: gioi han do sau cho `DFS1`, `DFS2`, `IDS`, `IDA*`.
+- `Depth / HC parameter`: depth limit cho `DFS1`, `DFS2`, `IDS`, `IDA*`; restart count cho `RANDOM RESTART HC`; beam width `k` cho `LOCAL BEAM`.
 
 Tang qua cao 2 gia tri tren co the lam thuat toan chay rat lau.
