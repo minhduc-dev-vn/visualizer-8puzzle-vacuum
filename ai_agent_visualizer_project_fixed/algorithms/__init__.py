@@ -7,6 +7,7 @@ from algorithms.ida_star import search as ida_star
 from algorithms.ucs import search as ucs
 from algorithms.astar import search as astar
 from algorithms.greedy import search as greedy
+from algorithms.and_or_graph_search import search as and_or_graph_search
 from algorithms.hill_climbing import search_simple as simple_hill_climbing
 from algorithms.hill_climbing import search_steepest as steepest_hill_climbing
 from algorithms.hill_climbing import search_stochastic as stochastic_hill_climbing
@@ -24,6 +25,7 @@ ALGORITHMS = {
     "UCS": ucs,
     "ASTAR": astar,
     "GREEDY": greedy,
+    "AND-OR GRAPH": and_or_graph_search,
     "SIMPLE HC": simple_hill_climbing,
     "STEEPEST HC": steepest_hill_climbing,
     "STOCHASTIC HC": stochastic_hill_climbing,

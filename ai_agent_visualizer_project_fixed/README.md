@@ -16,6 +16,7 @@ Tkinter app de mo phong cac thuat toan tim kiem cho:
 - `UCS`: Uniform-Cost Search.
 - `ASTAR`: A* Search.
 - `GREEDY`: Greedy Best-First Search.
+- `AND-OR GRAPH`: AND-OR Graph Search for conditional plans.
 - `SIMPLE HC`: Simple Hill Climbing.
 - `STEEPEST HC`: Steepest Ascent Hill Climbing.
 - `STOCHASTIC HC`: Stochastic Hill Climbing.
@@ -40,6 +41,7 @@ ai_agent_visualizer_project_fixed/
 |   |-- ucs.py
 |   |-- astar.py
 |   |-- greedy.py
+|   |-- and_or_graph_search.py
 |   |-- hill_climbing.py
 |   `-- simulated_annealing.py
 |-- problems/
@@ -88,6 +90,6 @@ UI co thanh cuon ngang/doc va o `Selected trace detail` de xem noi dung dai.
 ## Ghi chu ve gioi han
 
 - `Max expansions`: gioi han so lan mo rong de tranh treo may.
-- `Depth / HC parameter`: depth limit cho `DFS1`, `DFS2`, `IDS`, `IDA*`; restart count cho `RANDOM RESTART HC`; beam width `k` cho `LOCAL BEAM`; initial temperature `T0` cho `SIMULATED ANNEALING`.
+- `Depth / HC parameter`: depth limit cho `DFS1`, `DFS2`, `IDS`, `IDA*`, `AND-OR GRAPH`; restart count cho `RANDOM RESTART HC`; beam width `k` cho `LOCAL BEAM`; initial temperature `T0` cho `SIMULATED ANNEALING`.
 
 Tang qua cao 2 gia tri tren co the lam thuat toan chay rat lau.

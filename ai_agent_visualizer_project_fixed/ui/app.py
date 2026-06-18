@@ -259,6 +259,7 @@ class AIVisualizerApp(tk.Tk):
                 "UCS",
                 "ASTAR",
                 "GREEDY",
+                "AND-OR GRAPH",
                 "SIMPLE HC",
                 "STEEPEST HC",
                 "STOCHASTIC HC",
@@ -335,13 +336,16 @@ class AIVisualizerApp(tk.Tk):
             "check goal when generated\n\n"
             "SIMPLE/STEEPEST/STOCHASTIC HC:\n"
             "local search, can stop at local optimum\n\n"
+            "AND-OR GRAPH:\n"
+            "conditional plan search; this UI animates\n"
+            "the first successful result branch\n\n"
             "RANDOM RESTART HC:\n"
             "parameter = restart count\n\n"
             "LOCAL BEAM:\n"
             "parameter = k beam width\n\n"
             "SIMULATED ANNEALING:\n"
             "parameter = initial temperature T0\n\n"
-            "DFS + IDS + IDA* use depth limit\n"
+            "DFS + IDS + IDA* + AND-OR use depth limit\n"
             "to avoid 8-puzzle runaway."
         )
 
@@ -1001,7 +1005,7 @@ class AIVisualizerApp(tk.Tk):
         except ValueError:
             value = 12
 
-        # DFS/IDS/IDA* dùng giá trị này như depth limit.
+        # DFS/IDS/IDA*/AND-OR use this value as depth limit.
         # Random Restart HC dùng như số restart; Local Beam dùng như k.
         # Simulated Annealing uses this value as initial temperature T0.
         return max(1, min(value, 40))
