@@ -4,8 +4,10 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import scrolledtext
 
+from ac3 import ac3_search
 from backtracking import backtracking_search
 from forward_checking import forward_checking_search
+from min_conflicts import min_conflicts_search
 
 
 DISTRICTS = [
@@ -179,8 +181,11 @@ class MapColoringGUI:
         btn_frame = tk.Frame(control_frame, bg="#FFFFFF")
         btn_frame.pack(fill=tk.X)
 
+        first_btn_row = tk.Frame(btn_frame, bg="#FFFFFF")
+        first_btn_row.pack(fill=tk.X)
+
         self.btn_backtracking = tk.Button(
-            btn_frame,
+            first_btn_row,
             text="Backtracking",
             bg="#E67E22",
             fg="white",
@@ -192,7 +197,7 @@ class MapColoringGUI:
         self.btn_backtracking.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
         self.btn_forward = tk.Button(
-            btn_frame,
+            first_btn_row,
             text="Forward Checking",
             bg="#3498DB",
             fg="white",
@@ -203,8 +208,35 @@ class MapColoringGUI:
         )
         self.btn_forward.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
+        second_btn_row = tk.Frame(btn_frame, bg="#FFFFFF")
+        second_btn_row.pack(fill=tk.X, pady=(8, 0))
+
+        self.btn_ac3 = tk.Button(
+            second_btn_row,
+            text="AC-3",
+            bg="#8E44AD",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief=tk.FLAT,
+            height=2,
+            command=self.start_ac3,
+        )
+        self.btn_ac3.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+        self.btn_min_conflicts = tk.Button(
+            second_btn_row,
+            text="Min-Conflicts",
+            bg="#16A085",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief=tk.FLAT,
+            height=2,
+            command=self.start_min_conflicts,
+        )
+        self.btn_min_conflicts.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
         self.btn_stop = tk.Button(
-            btn_frame,
+            second_btn_row,
             text="Dừng / Reset",
             bg="#E74C3C",
             fg="white",
@@ -381,6 +413,30 @@ class MapColoringGUI:
         )
         self.run_animation()
 
+    def start_ac3(self) -> None:
+        self.stop_and_reset(write_log=False)
+        self.log("BẮT ĐẦU RÚT GỌN MIỀN BẰNG THUẬT TOÁN AC-3...", "step")
+        self.current_generator = ac3_search(
+            DISTRICTS,
+            {var: list(COLORS_LIST) for var in DISTRICTS},
+            NEIGHBORS,
+            NAMES,
+        )
+        self.run_animation()
+
+    def start_min_conflicts(self) -> None:
+        self.stop_and_reset(write_log=False)
+        self.log("BẮT ĐẦU GIẢI BẰNG THUẬT TOÁN MIN-CONFLICTS...", "step")
+        self.current_generator = min_conflicts_search(
+            DISTRICTS,
+            {var: list(COLORS_LIST) for var in DISTRICTS},
+            NEIGHBORS,
+            NAMES,
+            max_steps=300,
+            seed=42,
+        )
+        self.run_animation()
+
     def run_animation(self) -> None:
         if not self.current_generator:
             return
@@ -407,6 +463,7 @@ class MapColoringGUI:
         tag_by_step = {
             "select_var": "step",
             "try_val": "try",
+            "no_change": "normal",
             "conflict": "conflict",
             "assign": "assign",
             "prune": "prune",
