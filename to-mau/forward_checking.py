@@ -1,208 +1,92 @@
 # -*- coding: utf-8 -*-
-from __future__ import annotations
 
-from typing import Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
-
-
-Assignment = Dict[str, str]
-Domains = Dict[str, List[str]]
-Neighbors = Mapping[str, Sequence[str]]
-Step = Tuple[str, Assignment, Domains, Optional[str], Optional[str], str]
-
-
-def snapshot_domains(current_domains: Domains, variables: Sequence[str]) -> Domains:
-    return {var: list(current_domains[var]) for var in variables}
-
-
-def format_assignment(assignment: Assignment, names: Mapping[str, str]) -> str:
-    if not assignment:
-        return "{}"
-
-    parts = [
-        f"'{names.get(var, var)} ({var})': '{color}'"
-        for var, color in assignment.items()
-    ]
+def format_assignment(assignment, names):
+    parts = [f"'{names[k]} ({k})': '{v}'" for k, v in assignment.items()]
     return "{" + ", ".join(parts) + "}"
 
-
-def forward_checking_search(
-    variables: Sequence[str],
-    domains: Mapping[str, Sequence[str]],
-    neighbors: Neighbors,
-    names: Mapping[str, str],
-) -> Iterator[Step]:
+def forward_checking_search(variables, domains, neighbors, names):
     """
-    Forward Checking cho bài toán CSP tô màu bản đồ.
-
-    Mỗi bước trả về:
-    (step_type, assignment, current_domains, current_var, current_val, log_message)
+    Forward Checking Search generator for CSP Map Coloring.
+    Yields: (step_type, assignment, current_domains, current_var, current_val, log_message)
     """
-    assignment: Assignment = {}
-    current_domains: Domains = {var: list(domains[var]) for var in variables}
+    assignment = {}
+    current_domains = {v: list(domains[v]) for v in variables}
     step_num = [0]
-
-    def backtrack() -> Iterator[Step]:
+    
+    def backtrack():
         if len(assignment) == len(variables):
-            yield (
-                "success",
-                assignment.copy(),
-                snapshot_domains(current_domains, variables),
-                None,
-                None,
-                "Tìm thấy lời giải thành công!",
-            )
+            yield "success", assignment.copy(), {v: list(current_domains[v]) for v in variables}, None, None, "Tìm thấy lời giải thành công!"
             return True
-
-        var = next(item for item in variables if item not in assignment)
-        var_name = names.get(var, var)
-
+            
+        # Select first unassigned variable
+        var = None
+        for v in variables:
+            if v not in assignment:
+                var = v
+                break
+                
         step_num[0] += 1
-        yield (
-            "select_var",
-            assignment.copy(),
-            snapshot_domains(current_domains, variables),
-            var,
-            None,
-            f"Bước {step_num[0]}: Chọn quận/huyện để tô: {var_name} ({var})",
-        )
-
-        if not current_domains[var]:
-            yield (
-                "conflict",
-                assignment.copy(),
-                snapshot_domains(current_domains, variables),
-                var,
-                None,
-                f"   -> Thất bại: Miền giá trị của {var_name} ({var}) đã rỗng.",
-            )
-            return False
-
-        for color in list(current_domains[var]):
-            yield (
-                "try_val",
-                assignment.copy(),
-                snapshot_domains(current_domains, variables),
-                var,
-                color,
-                f" - Thử gán {var_name} ({var}) = {color}",
-            )
-
-            conflict_neighbor = next(
-                (
-                    neighbor
-                    for neighbor in neighbors[var]
-                    if neighbor in assignment and assignment[neighbor] == color
-                ),
-                None,
-            )
-
-            if conflict_neighbor is not None:
-                conflict_name = names.get(conflict_neighbor, conflict_neighbor)
-                yield (
-                    "conflict",
-                    assignment.copy(),
-                    snapshot_domains(current_domains, variables),
-                    var,
-                    color,
-                    f"   -> Thất bại: Trùng màu với {conflict_name} ({conflict_neighbor})",
-                )
-                continue
-
-            assignment[var] = color
-            previous_domains = snapshot_domains(current_domains, variables)
-            current_domains[var] = [color]
-
-            pruned_info: List[Tuple[str, List[str]]] = []
-            empty_neighbor: Optional[str] = None
-
+        var_name = names.get(var, var)
+        yield "select_var", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, None, f"Bước {step_num[0]}: Chọn quận/huyện để tô: {var_name} ({var})"
+        
+        # We only try colors that are currently in the domain of var
+        available_colors = list(current_domains[var])
+        for val in available_colors:
+            yield "try_val", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f" - Thử gán {var_name} ({var}) = {val}"
+            
+            # Assignment is consistent with previous nodes because of Forward Checking pruning
+            assignment[var] = val
+            
+            # Save domain state before pruning
+            prev_domains = {v: list(current_domains[v]) for v in variables}
+            current_domains[var] = [val]
+            
+            # Prune domains of unassigned neighbors
+            pruned_info = []
+            empty_domain_found = False
+            failed_neighbor = None
+            
             for neighbor in neighbors[var]:
-                if neighbor in assignment or color not in current_domains[neighbor]:
-                    continue
-
-                current_domains[neighbor].remove(color)
-                pruned_info.append((neighbor, list(current_domains[neighbor])))
-
-                if not current_domains[neighbor]:
-                    empty_neighbor = neighbor
-
-            yield (
-                "assign",
-                assignment.copy(),
-                snapshot_domains(current_domains, variables),
-                var,
-                color,
-                f"   -> Hợp lệ. Assignment = {format_assignment(assignment, names)}",
-            )
-
+                if neighbor not in assignment:
+                    if val in current_domains[neighbor]:
+                        current_domains[neighbor].remove(val)
+                        pruned_info.append((neighbor, list(current_domains[neighbor])))
+                        if len(current_domains[neighbor]) == 0:
+                            empty_domain_found = True
+                            failed_neighbor = neighbor
+            
+            yield "assign", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f"   -> Hợp lệ. Assignment = {format_assignment(assignment, names)}"
+            
             if pruned_info:
-                lines = ["   -> Cập nhật domain các quận/huyện giáp ranh chưa gán:"]
-                for neighbor, domain in pruned_info:
-                    neighbor_name = names.get(neighbor, neighbor)
-                    domain_text = ", ".join(f"'{item}'" for item in domain) or "rỗng"
-                    lines.append(
-                        f"     + Miền giá trị của {neighbor_name} ({neighbor}) = [{domain_text}]"
-                    )
-
-                yield (
-                    "prune",
-                    assignment.copy(),
-                    snapshot_domains(current_domains, variables),
-                    var,
-                    color,
-                    "\n".join(lines),
-                )
-
-            if empty_neighbor is not None:
-                failed_name = names.get(empty_neighbor, empty_neighbor)
-                yield (
-                    "conflict",
-                    assignment.copy(),
-                    snapshot_domains(current_domains, variables),
-                    var,
-                    color,
-                    f"   -> Thất bại: Miền giá trị của {failed_name} ({empty_neighbor}) bị rỗng! Cần quay lui.",
-                )
-
+                # Log domain updates
+                log_msg = "   -> Cập nhật domain các huyện/quận giáp ranh chưa gán:"
+                for n, dom in pruned_info:
+                    n_name = names.get(n, n)
+                    dom_str = ", ".join([f"'{c}'" for c in dom])
+                    log_msg += f"\n     + Miền giá trị của {n_name} ({n}) = [{dom_str}]"
+                yield "prune", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, log_msg
+                
+            if empty_domain_found:
+                failed_name = names.get(failed_neighbor, failed_neighbor)
+                yield "conflict", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f"   -> Thất bại: Miền giá trị của {failed_name} ({failed_neighbor}) bị rỗng! Cần quay lui."
+                # Restore domains
                 current_domains.clear()
-                current_domains.update(previous_domains)
+                current_domains.update(prev_domains)
                 del assignment[var]
-
-                yield (
-                    "backtrack",
-                    assignment.copy(),
-                    snapshot_domains(current_domains, variables),
-                    var,
-                    color,
-                    f"   -> Quay lui: Bỏ gán {var_name} ({var}) và khôi phục domain",
-                )
+                yield "backtrack", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f"   -> Quay lui: Bỏ gán {var_name} ({var}) và khôi phục domain"
                 continue
-
-            solved = yield from backtrack()
-            if solved:
+                
+            # Recurse
+            result = yield from backtrack()
+            if result:
                 return True
-
+                
+            # Restore domains and backtrack if recursion fails
             current_domains.clear()
-            current_domains.update(previous_domains)
+            current_domains.update(prev_domains)
             del assignment[var]
-
-            yield (
-                "backtrack",
-                assignment.copy(),
-                snapshot_domains(current_domains, variables),
-                var,
-                color,
-                f"   -> Quay lui: Bỏ gán {var_name} ({var}) và khôi phục domain",
-            )
-
+            yield "backtrack", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f"   -> Quay lui: Bỏ gán {var_name} ({var}) và khôi phục domain"
+            
         return False
-
-    solved = yield from backtrack()
-    if not solved:
-        yield (
-            "failure",
-            assignment.copy(),
-            snapshot_domains(current_domains, variables),
-            None,
-            None,
-            "Không tìm thấy lời giải với tập màu hiện tại.",
-        )
+        
+    yield from backtrack()

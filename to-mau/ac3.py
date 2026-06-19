@@ -1,150 +1,121 @@
 # -*- coding: utf-8 -*-
-from __future__ import annotations
 
-from collections import deque
-from typing import Deque, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
+def format_assignment(assignment, names):
+    parts = [f"'{names[k]} ({k})': '{v}'" for k, v in assignment.items()]
+    return "{" + ", ".join(parts) + "}"
 
-
-Assignment = Dict[str, str]
-Domains = Dict[str, List[str]]
-Neighbors = Mapping[str, Sequence[str]]
-Step = Tuple[str, Assignment, Domains, Optional[str], Optional[str], str]
-Arc = Tuple[str, str]
-
-
-def snapshot_domains(current_domains: Domains, variables: Sequence[str]) -> Domains:
-    return {var: list(current_domains[var]) for var in variables}
-
-
-def singleton_assignment(current_domains: Domains, variables: Sequence[str]) -> Assignment:
-    return {
-        var: current_domains[var][0]
-        for var in variables
-        if len(current_domains[var]) == 1
-    }
-
-
-def format_domain(domain: Sequence[str]) -> str:
-    return ", ".join(f"'{color}'" for color in domain) or "rỗng"
-
-
-def revise(xi: str, xj: str, current_domains: Domains) -> List[str]:
-    removed: List[str] = []
-
-    for color in list(current_domains[xi]):
-        has_support = any(color != other_color for other_color in current_domains[xj])
-        if not has_support:
-            current_domains[xi].remove(color)
-            removed.append(color)
-
-    return removed
-
-
-def ac3_search(
-    variables: Sequence[str],
-    domains: Mapping[str, Sequence[str]],
-    neighbors: Neighbors,
-    names: Mapping[str, str],
-) -> Iterator[Step]:
+def ac3_search(variables, domains, neighbors, names):
     """
-    AC-3 cho bài toán CSP tô màu bản đồ.
-
-    AC-3 chỉ rút gọn miền giá trị. Nếu sau khi chạy một biến còn nhiều màu,
-    thuật toán chưa tự chọn màu cuối cùng cho biến đó.
+    Backtracking Search with AC-3 constraint propagation (MAC) generator for CSP Map Coloring.
+    Yields: (step_type, assignment, current_domains, current_var, current_val, log_message)
     """
-    current_domains: Domains = {var: list(domains[var]) for var in variables}
-    queue: Deque[Arc] = deque(
-        (xi, xj)
-        for xi in variables
-        for xj in neighbors[xi]
-    )
-    step_num = 0
-
-    yield (
-        "select_var",
-        singleton_assignment(current_domains, variables),
-        snapshot_domains(current_domains, variables),
-        None,
-        None,
-        f"Khởi tạo AC-3 với {len(queue)} cung cần kiểm tra.",
-    )
-
-    while queue:
-        xi, xj = queue.popleft()
-        step_num += 1
-        xi_name = names.get(xi, xi)
-        xj_name = names.get(xj, xj)
-
-        yield (
-            "select_var",
-            singleton_assignment(current_domains, variables),
-            snapshot_domains(current_domains, variables),
-            xi,
-            None,
-            f"Bước {step_num}: Lấy cung ({xi_name} ({xi}), {xj_name} ({xj})) khỏi hàng đợi.",
-        )
-
-        removed = revise(xi, xj, current_domains)
-
-        if not removed:
-            yield (
-                "no_change",
-                singleton_assignment(current_domains, variables),
-                snapshot_domains(current_domains, variables),
-                xi,
-                None,
-                f"   -> Không xóa màu nào: mọi màu của {xi_name} đều có màu hỗ trợ ở {xj_name}.",
-            )
-            continue
-
-        removed_text = ", ".join(f"'{color}'" for color in removed)
-        yield (
-            "prune",
-            singleton_assignment(current_domains, variables),
-            snapshot_domains(current_domains, variables),
-            xi,
-            None,
-            f"   -> Xóa {removed_text} khỏi miền của {xi_name}. Miền còn lại = [{format_domain(current_domains[xi])}]",
-        )
-
-        if not current_domains[xi]:
-            yield (
-                "failure",
-                singleton_assignment(current_domains, variables),
-                snapshot_domains(current_domains, variables),
-                xi,
-                None,
-                f"AC-3 thất bại: Miền giá trị của {xi_name} ({xi}) bị rỗng.",
-            )
-            return
-
-        arcs_added: List[Arc] = []
-        for xk in neighbors[xi]:
-            if xk == xj:
+    assignment = {}
+    current_domains = {v: list(domains[v]) for v in variables}
+    step_num = [0]
+    
+    def backtrack():
+        if len(assignment) == len(variables):
+            yield "success", assignment.copy(), {v: list(current_domains[v]) for v in variables}, None, None, "Tìm thấy lời giải thành công!"
+            return True
+            
+        # Select first unassigned variable
+        var = None
+        for v in variables:
+            if v not in assignment:
+                var = v
+                break
+                
+        step_num[0] += 1
+        var_name = names.get(var, var)
+        yield "select_var", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, None, f"Bước {step_num[0]}: Chọn quận/huyện để tô: {var_name} ({var})"
+        
+        # Try each color currently in the variable's domain
+        available_colors = list(current_domains[var])
+        for val in available_colors:
+            yield "try_val", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f" - Thử gán {var_name} ({var}) = {val}"
+            
+            # Save domain state before assignment and pruning
+            prev_domains = {v: list(current_domains[v]) for v in variables}
+            
+            # Assign value
+            assignment[var] = val
+            current_domains[var] = [val]
+            
+            yield "assign", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f"   -> Hợp lệ. Assignment = {format_assignment(assignment, names)}"
+            
+            # Run AC-3 constraint propagation
+            # Queue initially contains all arcs (Xk, var) where Xk is an unassigned neighbor of var
+            queue = [(neighbor, var) for neighbor in neighbors[var] if neighbor not in assignment]
+            
+            ac3_failed = False
+            pruned_info = []
+            failed_var = None
+            
+            while queue:
+                xi, xj = queue.pop(0)
+                
+                # RM-Inconsistent-Values(Xi, Xj)
+                removed = False
+                new_domain_xi = []
+                for x in current_domains[xi]:
+                    # Check if there is any value y in Domain[Xj] that satisfies the constraint (x != y)
+                    has_support = False
+                    for y in current_domains[xj]:
+                        if x != y:
+                            has_support = True
+                            break
+                    if has_support:
+                        new_domain_xi.append(x)
+                    else:
+                        removed = True
+                
+                if removed:
+                    current_domains[xi] = new_domain_xi
+                    pruned_info.append((xi, list(new_domain_xi)))
+                    
+                    if len(current_domains[xi]) == 0:
+                        ac3_failed = True
+                        failed_var = xi
+                        break
+                    
+                    # Since Domain[Xi] was reduced, add all arcs (Xk, Xi) to queue
+                    # where Xk is an unassigned neighbor of Xi and Xk != Xj
+                    for xk in neighbors[xi]:
+                        if xk not in assignment and xk != xj:
+                            # Avoid duplicates in queue
+                            if (xk, xi) not in queue:
+                                queue.append((xk, xi))
+            
+            if pruned_info:
+                log_msg = "   -> AC-3 Lan truyền ràng buộc (Arc Consistency):"
+                for n, dom in pruned_info:
+                    n_name = names.get(n, n)
+                    dom_str = ", ".join([f"'{c}'" for c in dom])
+                    log_msg += f"\n     + Cắt tỉa miền giá trị của {n_name} ({n}) = [{dom_str}]"
+                yield "prune", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, log_msg
+                
+            if ac3_failed:
+                failed_name = names.get(failed_var, failed_var)
+                yield "conflict", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f"   -> Thất bại: AC-3 phát hiện miền giá trị của {failed_name} ({failed_var}) bị rỗng! Cần quay lui."
+                
+                # Restore domains and assignment
+                current_domains.clear()
+                current_domains.update(prev_domains)
+                del assignment[var]
+                yield "backtrack", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f"   -> Quay lui: Bỏ gán {var_name} ({var}) và khôi phục domain"
                 continue
+            
+            # Recurse
+            result = yield from backtrack()
+            if result:
+                return True
+                
+            # Restore domains and backtrack if recursion fails
+            current_domains.clear()
+            current_domains.update(prev_domains)
+            del assignment[var]
+            yield "backtrack", assignment.copy(), {v: list(current_domains[v]) for v in variables}, var, val, f"   -> Quay lui: Bỏ gán {var_name} ({var}) và khôi phục domain"
+            
+        return False
 
-            queue.append((xk, xi))
-            arcs_added.append((xk, xi))
-
-        if arcs_added:
-            arc_text = ", ".join(
-                f"({names.get(xk, xk)} ({xk}), {xi_name} ({xi}))"
-                for xk, _ in arcs_added
-            )
-            yield (
-                "prune",
-                singleton_assignment(current_domains, variables),
-                snapshot_domains(current_domains, variables),
-                xi,
-                None,
-                f"   -> Vì miền của {xi_name} thay đổi, thêm lại các cung liên quan: {arc_text}",
-            )
-
-    yield (
-        "success",
-        singleton_assignment(current_domains, variables),
-        snapshot_domains(current_domains, variables),
-        None,
-        None,
-        "AC-3 kết thúc: CSP đã nhất quán cung. Các quận/huyện còn nhiều màu cần thuật toán tìm kiếm để chọn tiếp.",
-    )
+    yield from backtrack()
