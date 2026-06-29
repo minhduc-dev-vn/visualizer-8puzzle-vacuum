@@ -28,6 +28,50 @@ Trong đó, module tìm kiếm trạng thái có 2 môi trường minh họa:
 | 5 | Bài toán thỏa mãn ràng buộc CSP | Backtracking, Forward Checking, AC-3/MAC, Min-Conflicts | Tô màu bản đồ |
 | 6 | Tìm kiếm đối kháng | Minimax, Alpha-Beta Pruning, Expectimax | Caro |
 
+### 2.1. Mô tả ngắn các thuật toán
+
+#### Nhóm tìm kiếm không thông tin
+
+- `BFS1`: duyệt theo chiều rộng bằng hàng đợi FIFO, kiểm tra goal khi node được lấy ra khỏi frontier. Thuật toán tìm được lời giải nông nhất nếu chi phí bước đi bằng nhau.
+- `BFS2`: biến thể BFS kiểm tra goal ngay khi sinh node con. Cách này thường dừng sớm hơn BFS1 vì không cần đợi goal được pop khỏi frontier.
+- `DFS1`: duyệt theo chiều sâu bằng stack LIFO, kiểm tra goal khi node được lấy ra khỏi stack. Trong project có giới hạn độ sâu để tránh đi quá sâu hoặc lặp lâu.
+- `DFS2`: biến thể DFS kiểm tra goal ngay khi sinh node con. Thuật toán vẫn có thể không tìm được lời giải nếu bị giới hạn độ sâu hoặc chọn nhánh không thuận lợi.
+- `UCS`: Uniform-Cost Search, ưu tiên node có tổng chi phí đường đi nhỏ nhất. Trong project, mỗi hành động có cost bằng 1 nên UCS cho kết quả tương tự BFS tối ưu theo số bước.
+- `IDS`: Iterative Deepening Search, chạy DFS nhiều lần với độ sâu tăng dần. IDS kết hợp ưu điểm tiết kiệm bộ nhớ của DFS và khả năng tìm lời giải nông như BFS.
+
+#### Nhóm tìm kiếm có thông tin
+
+- `GREEDY`: Greedy Best-First Search, chọn node có heuristic nhỏ nhất. Thuật toán thường chạy nhanh nhưng không đảm bảo tối ưu.
+- `ASTAR`: A* Search, chọn node theo `f(n) = g(n) + h(n)`. Với heuristic phù hợp, A* có thể tìm lời giải tối ưu hiệu quả hơn BFS/UCS.
+- `IDA*`: Iterative Deepening A*, kết hợp ý tưởng A* với tìm kiếm sâu dần theo ngưỡng `f`. Thuật toán tiết kiệm bộ nhớ hơn A* nhưng có thể lặp lại nhiều node.
+
+#### Nhóm tìm kiếm cục bộ
+
+- `SIMPLE HC`: Simple Hill Climbing, chọn láng giềng đầu tiên cải thiện điểm heuristic. Thuật toán đơn giản nhưng dễ kẹt tại local optimum.
+- `STEEPEST HC`: Steepest Ascent Hill Climbing, xét các láng giềng và chọn trạng thái cải thiện tốt nhất. Cách này kỹ hơn Simple HC nhưng vẫn có thể kẹt plateau/local optimum.
+- `STOCHASTIC HC`: Stochastic Hill Climbing, chọn ngẫu nhiên một láng giềng có cải thiện. Thuật toán có yếu tố ngẫu nhiên nên kết quả có thể khác nhau giữa các lần chạy.
+- `RANDOM RESTART HC`: chạy Hill Climbing nhiều lần từ các trạng thái khởi đầu khác nhau để tăng khả năng thoát local optimum.
+- `LOCAL BEAM`: giữ đồng thời `k` trạng thái tốt nhất ở mỗi vòng lặp. Thuật toán mở rộng nhiều hướng cùng lúc thay vì chỉ đi theo một trạng thái hiện tại.
+- `SIMULATED ANNEALING`: chọn cả bước đi xấu hơn với một xác suất phụ thuộc nhiệt độ. Khi nhiệt độ giảm dần, thuật toán chuyển từ khám phá rộng sang khai thác cục bộ.
+
+#### Nhóm môi trường không xác định / quan sát không đầy đủ
+
+- `AND-OR GRAPH`: tìm kế hoạch có điều kiện trong môi trường có thể có nhiều kết quả sau một hành động. OR node biểu diễn lựa chọn hành động, AND node biểu diễn các kết quả đều phải được xử lý.
+- `BELIEF-STATE BFS`: tìm kiếm trên belief state cho Vacuum. Một belief state là tập các trạng thái môi trường có thể xảy ra khi agent không biết chắc bản đồ bụi; thuật toán tìm một chuỗi hành động làm sạch mọi khả năng.
+
+#### Nhóm CSP
+
+- `Backtracking`: gán màu lần lượt cho từng biến, nếu vi phạm ràng buộc thì quay lui. Đây là cách cơ bản để giải bài toán thỏa mãn ràng buộc.
+- `Forward Checking`: sau khi gán một biến, thuật toán loại màu không hợp lệ khỏi miền giá trị của các biến láng giềng chưa gán. Nhờ đó phát hiện xung đột sớm hơn Backtracking thuần.
+- `AC-3/MAC`: duy trì tính nhất quán cung giữa các biến. Khi miền giá trị bị thu hẹp, thuật toán tiếp tục lan truyền ràng buộc đến các cung liên quan.
+- `Min-Conflicts`: bắt đầu với một assignment đầy đủ, sau đó liên tục chọn biến đang xung đột và đổi sang giá trị gây ít xung đột nhất. Thuật toán phù hợp với CSP lớn và có yếu tố ngẫu nhiên.
+
+#### Nhóm tìm kiếm đối kháng
+
+- `Minimax`: giả định AI và người chơi đều chọn nước đi tối ưu. AI chọn nước đi tối đa hóa điểm, còn đối thủ được xem là bên tối thiểu hóa điểm của AI.
+- `Alpha-Beta Pruning`: tối ưu Minimax bằng cách cắt bỏ các nhánh chắc chắn không ảnh hưởng đến quyết định cuối cùng. Kết quả logic giống Minimax nhưng thường duyệt ít node hơn.
+- `Expectimax`: mở rộng Minimax bằng cách mô hình hóa đối thủ như nút xác suất. Thay vì luôn chọn nước đi gây bất lợi nhất cho AI, thuật toán lấy giá trị kỳ vọng của các nước đi có thể xảy ra.
+
 ## 3. Cấu trúc thư mục
 
 ```text
