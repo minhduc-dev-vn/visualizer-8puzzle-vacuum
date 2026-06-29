@@ -14,6 +14,7 @@ from algorithms.hill_climbing import search_stochastic as stochastic_hill_climbi
 from algorithms.hill_climbing import search_random_restart as random_restart_hill_climbing
 from algorithms.hill_climbing import search_local_beam as local_beam_search
 from algorithms.simulated_annealing import search as simulated_annealing
+from algorithms.vacuum_belief_state import search as vacuum_belief_state_search
 
 ALGORITHMS = {
     "BFS1": bfs1,
@@ -32,4 +33,5 @@ ALGORITHMS = {
     "RANDOM RESTART HC": random_restart_hill_climbing,
     "LOCAL BEAM": local_beam_search,
     "SIMULATED ANNEALING": simulated_annealing,
+    "BELIEF-STATE BFS": vacuum_belief_state_search,
 }

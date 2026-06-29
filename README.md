@@ -1,4 +1,4 @@
-# Project cuối kì: Mô phỏng các nhóm thuật toán trí tuệ nhân tạo
+# Project_Ca_Nhan: Mô phỏng các nhóm thuật toán trí tuệ nhân tạo
 
 Project này xây dựng giao diện trực quan để mô phỏng và so sánh các nhóm thuật toán trí tuệ nhân tạo trên nhiều dạng bài toán khác nhau. Mục tiêu chính là minh họa cách các thuật toán tìm kiếm, tối ưu, thỏa mãn ràng buộc và tìm kiếm đối kháng hoạt động thông qua giao diện tương tác.
 
@@ -8,7 +8,7 @@ Project gồm 3 đề tài chính:
 
 | STT | Đề tài | Thư mục | Nội dung mô phỏng |
 | --- | --- | --- | --- |
-| 1 | Tìm kiếm trạng thái cho agent | `ai_agent_visualizer_project_fixed` | 8-puzzle và Vacuum World |
+| 1 | Tìm kiếm trạng thái cho agent | `ai_agent_visualizer_project_fixed` | 8-puzzle, Vacuum World và Belief-State Vacuum |
 | 2 | Bài toán thỏa mãn ràng buộc CSP | `to-mau` | Tô màu bản đồ TP. Hồ Chí Minh |
 | 3 | Tìm kiếm đối kháng trong trò chơi | `caro` | Game Caro 15x15 người chơi với AI |
 
@@ -24,14 +24,14 @@ Trong đó, module tìm kiếm trạng thái có 2 môi trường minh họa:
 | 1 | Tìm kiếm không thông tin | BFS1, BFS2, DFS1, DFS2, UCS, IDS | 8-puzzle, Vacuum World |
 | 2 | Tìm kiếm có thông tin / heuristic search | Greedy Best-First Search, A*, IDA* | 8-puzzle, Vacuum World |
 | 3 | Tìm kiếm cục bộ | Simple Hill Climbing, Steepest Hill Climbing, Stochastic Hill Climbing, Random Restart Hill Climbing, Local Beam Search, Simulated Annealing | 8-puzzle, Vacuum World |
-| 4 | Tìm kiếm trong môi trường không xác định | AND-OR Graph Search | 8-puzzle, Vacuum World |
+| 4 | Tìm kiếm trong môi trường không xác định / quan sát không đầy đủ | AND-OR Graph Search; Belief-State BFS cho Vacuum | 8-puzzle, Vacuum World |
 | 5 | Bài toán thỏa mãn ràng buộc CSP | Backtracking, Forward Checking, AC-3/MAC, Min-Conflicts | Tô màu bản đồ |
 | 6 | Tìm kiếm đối kháng | Minimax, Alpha-Beta Pruning, Expectimax | Caro |
 
 ## 3. Cấu trúc thư mục
 
 ```text
-Bai-tap-ve-nha/
+Project_Ca_Nhan/
 |-- README.md
 |-- ai_agent_visualizer_project_fixed/
 |   |-- main.py
@@ -130,6 +130,8 @@ Với `Vacuum World`, trạng thái gồm vị trí robot và ma trận môi tr�
 - Hút bụi tại ô hiện tại.
 - Kết thúc khi tất cả ô bụi đã được làm sạch.
 
+Với `Belief-State Vacuum`, agent biết vị trí hiện tại và vị trí vật cản, nhưng không biết chắc ô nào có bụi. Một belief state là tập hợp các trạng thái môi trường có thể xảy ra. Thuật toán `BELIEF-STATE BFS` tìm một chuỗi hành động có thể làm sạch tất cả các khả năng trong belief state, tức là một kế hoạch phù hợp cho môi trường quan sát không đầy đủ.
+
 Module này minh họa rõ các khái niệm:
 
 - State
@@ -140,6 +142,7 @@ Module này minh họa rõ các khái niệm:
 - Reached set
 - Search trace
 - Solution path
+- Belief state
 
 ### 5.2. Tô màu bản đồ
 
@@ -177,6 +180,7 @@ Project đã được kiểm tra các nội dung chính:
 - Toàn bộ file Python compile thành công, không có lỗi cú pháp.
 - 8-puzzle và Vacuum World chạy được trên giao diện Tkinter.
 - Các thuật toán BFS, UCS, IDS, A*, Greedy, IDA* tìm được đường đi hợp lệ trên trạng thái mặc định.
+- Belief-State BFS tìm được kế hoạch làm sạch cho Vacuum World khi agent chưa biết chắc bản đồ bụi.
 - Các thuật toán local search hoạt động đúng bản chất, có thể tìm lời giải hoặc dừng ở local optimum.
 - Tô màu bản đồ trả về nghiệm hợp lệ, không có hai khu vực giáp ranh trùng màu.
 - Caro kiểm tra thắng ngang, dọc, chéo, phản chéo chính xác.
@@ -190,6 +194,7 @@ Một số thuật toán không đảm bảo luôn tìm được lời giải tr
 - Hill Climbing có thể dừng tại local optimum hoặc plateau.
 - Simulated Annealing phụ thuộc vào tham số nhiệt độ, tốc độ làm nguội và yếu tố ngẫu nhiên.
 - Min-Conflicts cũng có yếu tố ngẫu nhiên, tuy nhiên thường tìm được nghiệm nhanh với bài toán tô màu hiện tại.
+- Belief-State BFS có thể tốn nhiều bộ nhớ hơn state search thông thường vì mỗi node là một tập các trạng thái có thể xảy ra.
 
 Vì vậy, khi báo cáo cần phân biệt:
 
@@ -218,4 +223,3 @@ Một số hướng có thể mở rộng:
 - Thêm bản đồ khác cho bài toán tô màu.
 - Tối ưu heuristic cho Caro để AI đánh tốt hơn.
 - Lưu lại lịch sử chạy thuật toán để phục vụ báo cáo/thống kê.
-

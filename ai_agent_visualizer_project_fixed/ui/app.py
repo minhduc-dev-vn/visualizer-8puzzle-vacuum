@@ -266,6 +266,7 @@ class AIVisualizerApp(tk.Tk):
                 "RANDOM RESTART HC",
                 "LOCAL BEAM",
                 "SIMULATED ANNEALING",
+                "BELIEF-STATE BFS",
             ],
             state="readonly",
             width=16,
@@ -345,6 +346,9 @@ class AIVisualizerApp(tk.Tk):
             "parameter = k beam width\n\n"
             "SIMULATED ANNEALING:\n"
             "parameter = initial temperature T0\n\n"
+            "BELIEF-STATE BFS:\n"
+            "Vacuum only; assumes unknown dirt map\n"
+            "and finds one plan for all possibilities\n\n"
             "DFS + IDS + IDA* + AND-OR use depth limit\n"
             "to avoid 8-puzzle runaway."
         )
@@ -775,6 +779,13 @@ class AIVisualizerApp(tk.Tk):
 
         start_state = self.current_state()
         algorithm_name = self.algorithm_var.get()
+
+        if algorithm_name == "BELIEF-STATE BFS" and self.mode_var.get() != "VACUUM":
+            self.is_searching = False
+            self.apply_button.configure(state=tk.NORMAL)
+            self.update_status("BELIEF-STATE BFS is available for Vacuum only.")
+            return
+
         search_function = ALGORITHMS[algorithm_name]
 
         if self.mode_var.get() == "8-PUZZLE":
@@ -825,6 +836,8 @@ class AIVisualizerApp(tk.Tk):
             return
 
         self.solution_path = result.path
+        if self.mode_var.get() == "VACUUM" and self.algorithm_var.get() == "BELIEF-STATE BFS":
+            self.vacuum_initial_dirt = max(1, VacuumProblem.dirty_count(result.path[0].state))
         self.current_step = 0
         self.is_animating = True
 

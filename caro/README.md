@@ -17,7 +17,7 @@ python main.py
 Neu dang o thu muc goc repo:
 
 ```bash
-cd Bai-tap-ve-nha/caro
+cd Project_Ca_Nhan/caro
 python main.py
 ```
 
